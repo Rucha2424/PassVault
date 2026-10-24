@@ -1,0 +1,10 @@
+{
+  "name": "passvault",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PassVault — Secure Cloud-Based Password Manager",
+  "scripts": {
+    "start": "docker compose up --build",
+    "build": "npm --prefix frontend run build"
+  }
+}
