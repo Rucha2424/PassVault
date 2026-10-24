@@ -1,0 +1,76 @@
+services:
+  mongodb:
+    image: mongo:7.0-jammy
+    container_name: passvault-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-vaultadmin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-vaultsecret}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-passvault}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - passvault-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: passvault-backend
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      PORT: 5000
+      NODE_ENV: production
+      MONGODB_URI: mongodb://${MONGO_INITDB_ROOT_USERNAME:-vaultadmin}:${MONGO_INITDB_ROOT_PASSWORD:-vaultsecret}@mongodb:27017/passvault?authSource=admin
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:3000}
+      JWT_SECRET: ${JWT_SECRET:-passvault_super_secret_jwt_key_32_characters_minimum!}
+      COOKIE_SECRET: ${COOKIE_SECRET:-passvault_cookie_signing_secret_dev!}
+    ports:
+      - "5000:5000"
+    networks:
+      - passvault-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: passvault-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+    networks:
+      - passvault-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+networks:
+  passvault-network:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local
