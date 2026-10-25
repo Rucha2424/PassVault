@@ -182,36 +182,25 @@ c:\Users\deshp\CCND/
 
 ---
 
-## 6. Local Development Setup
+## 6. Local Development Setup (Without Docker)
 
-### Prerequisites
-- Node.js (v20+ recommended)
-- npm (v10+)
-- MongoDB (or Docker)
+PassVault includes an automatic zero-configuration runner. You do **not** need Docker or MongoDB installed on your laptop to run the full application.
 
-### 1. Clone & Configure Environment
+### One Single Command to Run Everything:
+From the project root (`C:\Users\deshp\CCND`):
+
 ```bash
-git clone <repository-url>
-cd CCND
-cp .env.example .env
-```
-
-### 2. Backend Setup
-```bash
-cd backend
-npm install
 npm run dev
 ```
-The backend API starts on `http://localhost:5000`.
+*(or `npm start` or `node dev.js`)*
 
-### 3. Frontend Setup
-In a new terminal:
-```bash
-cd frontend
-npm install
-npm run dev
-```
-The frontend Vite server opens on `http://localhost:3000`.
+#### What happens automatically:
+1. **Embedded MongoDB**: If no local or Docker MongoDB instance is detected on port 27017, PassVault automatically starts an embedded in-memory MongoDB instance with zero configuration.
+2. **Backend API**: Boots the Express REST API on `http://localhost:5000/api`.
+3. **Frontend UI**: Starts the Vite development server on `http://localhost:3000`.
+4. **Unified Logs**: Streams colored, tagged logs (`[Backend]`, `[Frontend]`) to your single terminal window.
+
+Open [http://localhost:3000](http://localhost:3000) in your browser to start using PassVault!
 
 ---
 

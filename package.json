@@ -2,9 +2,12 @@
   "name": "passvault",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "PassVault — Secure Cloud-Based Password Manager",
   "scripts": {
-    "start": "docker compose up --build",
+    "dev": "node dev.js",
+    "start": "node dev.js",
+    "docker": "docker compose up --build",
     "build": "npm --prefix frontend run build"
   }
 }
