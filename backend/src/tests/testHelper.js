@@ -4,10 +4,16 @@ let mongoServer;
 
 export const setupTestDB = () => {
   beforeAll(async () => {
-    // 1. If CI or environment provides a dedicated test database, use it directly
+    // 1. If CI or environment provides a dedicated test database, try it first
     if (process.env.TEST_MONGODB_URI) {
-      await mongoose.connect(process.env.TEST_MONGODB_URI);
-      return;
+      try {
+        await mongoose.connect(process.env.TEST_MONGODB_URI, {
+          serverSelectionTimeoutMS: 4000,
+        });
+        return;
+      } catch (err) {
+        console.warn('Dedicated test DB unreachable, falling back:', err.message);
+      }
     }
 
     // 2. Check if a local MongoDB service is already running on port 27017
