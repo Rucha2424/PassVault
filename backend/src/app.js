@@ -32,11 +32,19 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, or tests)
-      if (!origin || allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (like healthcheck probes, curl, or tests)
+      if (!origin) return callback(null, true);
+      
+      // Allow configured origins or any onrender.com / vercel.app deploy previews
+      if (
+        allowedOrigins.includes(origin) ||
+        origin.endsWith('.onrender.com') ||
+        origin.endsWith('.vercel.app')
+      ) {
         return callback(null, true);
       }
-      return callback(new Error('Blocked by CORS policy'));
+      
+      return callback(new Error(`Blocked by CORS policy: origin ${origin} is not allowed`));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

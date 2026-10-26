@@ -302,22 +302,60 @@ npm test
 
 ---
 
-## 11. GitHub Actions CI/CD Pipeline
+## 11. GitHub Actions CI/CD Pipeline (100% Free Cloud Deployment)
 
-The `.github/workflows/ci.yml` workflow automatically runs on every push and pull request to the `main` branch.
+The `.github/workflows/ci.yml` workflow provides an automated, zero-cost Continuous Integration and Continuous Deployment pipeline using GitHub Actions, designed to operate without requiring any paid servers, VPS subscriptions, or local Docker installations.
+
+### Pipeline Architecture:
+
+```
+[ Git Push / PR to main ]
+           │
+           ├───────────────────────────┐
+           ▼                           ▼
+[ Job: test-frontend ]        [ Job: test-backend ]
+• Setup Node.js 22 (Cached)   • Setup Node.js 22 (Cached)
+• Oxlint Linter               • Jest Integration Tests
+• Vitest Cryptographic Tests  • In-Memory MongoDB Server
+• Vite Production Build                    │
+           │                               │
+           └─────────────┬─────────────────┘
+                         ▼
+             [ Job: deploy (CD) ]
+             • Triggers on main branch push
+             • Zero-cost webhook trigger via curl
+             • Dispatches build to Render Web Service
+             • Zero Docker & Zero SSH dependencies needed
+```
 
 ### Pipeline Stages:
 1. **Frontend Lint, Test & Build**:
-   - Sets up Node.js 22 with dependency caching.
-   - Runs static lint checks (`oxlint`).
-   - Executes Vitest unit tests for cryptographic algorithms and UI components.
+   - Sets up Node.js 22 with dependency caching (`npm` cache).
+   - Runs fast static lint checks (`oxlint`).
+   - Executes Vitest unit tests for cryptographic algorithms (PBKDF2, AES-256-GCM) and UI components.
    - Compiles Vite production bundle (`npm run build`).
 2. **Backend Test & Verification**:
-   - Sets up Node.js 22.
-   - Runs Jest integration tests using an in-memory MongoDB server.
-   - Verifies authentication flows, ownership checks, and API validation.
-3. **Docker Image Build Validation**:
-   - Builds `passvault-backend` and `passvault-frontend` Docker images using Docker Buildx to guarantee image reproducibility.
+   - Sets up Node.js 22 with dependency caching.
+   - Runs Jest integration tests using an in-memory embedded MongoDB server (`mongodb-memory-server`), ensuring 100% test isolation without requiring Docker or a running MongoDB daemon.
+3. **Automated Zero-Cost Cloud Deployment (CD)**:
+   - Triggers strictly on `push` to `main` (or manual `workflow_dispatch`).
+   - Calls the free [Render](https://render.com) Deploy Hook webhook URL via `curl`.
+   - Render automatically pulls the latest code from GitHub and builds & hosts the Node.js backend.
+
+### Free Cloud Deployment Configuration (Zero-Cost Setup):
+
+1. **Database (MongoDB Atlas - Free 512MB M0 Cluster)**:
+   - Create a free database at [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas/register).
+   - Obtain your connection URI: `mongodb+srv://<user>:<password>@cluster0.mongodb.net/passvault?retryWrites=true&w=majority`.
+2. **Backend (Render Web Service - Free)**:
+   - Sign up at [render.com](https://render.com/) with GitHub.
+   - Create a **New Web Service** pointing to `PassVault` (`backend` directory, Node runtime).
+   - Add environment variables: `NODE_ENV=production`, `PORT=5000`, `MONGODB_URI=<Atlas URI>`, `JWT_SECRET=<secret>`, `COOKIE_SECRET=<secret>`.
+   - In Render service settings, copy your **Deploy Hook** URL.
+3. **GitHub Repository Secrets**:
+   - In GitHub (**Settings > Secrets and variables > Actions > New repository secret**), add:
+     - `RENDER_BACKEND_DEPLOY_HOOK`: *(Your Render Deploy Hook URL)*
+     - `RENDER_FRONTEND_DEPLOY_HOOK`: *(Optional, if hosting frontend on Render)*
 
 ---
 
